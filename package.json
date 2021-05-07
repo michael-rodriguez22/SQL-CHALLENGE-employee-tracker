@@ -1,0 +1,33 @@
+{
+  "name": "butter-fly-for-a-nice-guy",
+  "version": "1.0.0",
+  "description": "Content Management System accessed through the command line",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikeyrod22/butter-fly-for-a-nice-guy.git"
+  },
+  "keywords": [
+    "CMS",
+    "CLI",
+    "Node",
+    "MYSQL",
+    "mysql2",
+    "inquirer"
+  ],
+  "author": "Michael Rodriguez",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mikeyrod22/butter-fly-for-a-nice-guy/issues"
+  },
+  "homepage": "https://github.com/mikeyrod22/butter-fly-for-a-nice-guy#readme",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "dotenv": "^9.0.0",
+    "inquirer": "^8.0.0",
+    "mysql2": "^2.2.5"
+  }
+}
