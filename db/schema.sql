@@ -1,6 +1,6 @@
-DROP TABLE IF EXISTS employees;
-DROP TABLE IF EXISTS roles;
-DROP TABLE IF EXISTS departments;
+DROP DATABASE IF EXISTS butterfly_cms;
+CREATE DATABASE butterfly_cms;
+USE butterfly_cms;
 
 CREATE TABLE departments(
     id INTEGER AUTO_INCREMENT PRIMARY KEY,
