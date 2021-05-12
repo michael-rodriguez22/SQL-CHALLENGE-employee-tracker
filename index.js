@@ -2,6 +2,7 @@ const inquirer = require("inquirer");
 const db = require("./config/connection");
 require("console.table");
 
+// -------------PROMPTS---------------------------
 const mainPrompt = async () => {
     const answers = await inquirer.prompt([
         {
@@ -26,7 +27,26 @@ const mainPrompt = async () => {
         case 'View all departments': return view(allDepartments);
         case 'View all roles': return view(allRoles); 
         case 'View all employees': return view(allEmployees);
+        case 'Add a department': return addDepPrompt();
     }
+}
+
+const addDepPrompt = async () => {
+    const answers = await inquirer.prompt(
+        {
+            type: 'input',
+            name: 'depName',
+            message: 'Please enter a name for the department you would like to add.',
+            validate: depName => {
+                if (depName) return true;
+                return false;
+            }
+        }
+    )
+    const sql = `INSERT INTO departments (name)
+                    VALUES ("${answers.depName}")`;
+    const message = `\n ${answers.depName} has been added to departments. \n`;
+    execute(sql, message);
 }
 
 // ------------- QUERIES ----------------------------
@@ -44,7 +64,7 @@ const allEmployees = `SELECT emp.id, emp.first_name, emp.last_name,
                         JOIN departments ON departments.id = roles.department_id
                         LEFT JOIN employees AS manager ON manager.id = emp.manager_id`;
 
-// -------------- VIEW ----------------------------
+// -------------- UTIL ----------------------------
 const view = (query) => {
     db.promise()
         .query(query)
@@ -52,6 +72,16 @@ const view = (query) => {
             console.log(`\n`);
             console.table(rows);
             console.log(`\n`);
+            mainPrompt();
+        })
+        .catch(err => console.log(err));
+}
+
+const execute = (sql, message) => {
+    db.promise()
+        .execute(sql)
+        .then(() => {
+            console.log(message);
             mainPrompt();
         })
         .catch(err => console.log(err));
