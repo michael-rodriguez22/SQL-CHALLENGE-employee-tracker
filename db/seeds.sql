@@ -21,18 +21,18 @@ VALUES
 ("Visual Tech", 2000, 3);
 
 
-INSERT INTO employees (first_name, last_name, manager_id, role_id)
+INSERT INTO employees (first_name, last_name, role_id, manager_id, is_manager)
 VALUES 
-("Alex", "Afferson", null, 1),
-("Penelope", "Bailey", 1, 2),
-("Drew", "Tucker", 2, 3),
-("Kaicey", "Micho", 1, 4),
-("Maximo", "Santanna", 4, 5),
-("Haley", "Fulton", 5, 6),
-("Jordan", "Masters", 1, 7),
-("Maggie", "June", 7, 8),
-("Juan", "Pablo", 8, 9),
-("Dominique", "Lousteau", 1, 10),
-("Sammi", "Rogers", 1, 11),
-("Sophia", "Thomason", 1, 12),
-("Broland", "Hernandez", 12, 13);
+("Alex", "Afferson", 1, null, 1),
+("Penelope", "Bailey", 2, 1, 1),
+("Drew", "Tucker", 3, 2, 0),
+("Kaicey", "Micho", 4, 1, 1),
+("Maximo", "Santanna", 5, 4, 1),
+("Haley", "Fulton", 6, 5, 0),
+("Jordan", "Masters", 7, 1, 1),
+("Maggie", "June", 8, 7, 1),
+("Juan", "Pablo", 9, 8, 0),
+("Dominique", "Lousteau", 10, 1, 0),
+("Sammi", "Rogers", 11, 1, 0),
+("Sophia", "Thomason", 12, 1, 1),
+("Broland", "Hernandez", 13, 12, 0);
