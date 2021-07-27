@@ -1,90 +1,125 @@
-const inquirer = require("inquirer");
 const db = require("./config/connection");
-require("console.table");
-
-// -------------PROMPTS---------------------------
-const mainPrompt = async () => {
-    const answers = await inquirer.prompt([
-        {
-            type: 'list',
-            name: 'opening',
-            message: 'What would you like to do?',
-            choices: [
-                'Exit',
-                'View all departments',
-                'View all roles',
-                'View all employees',
-                'Add a department',
-                'Add a role',
-                'Add an employee',
-                'Update an employee'
-            ],
-            pageSize: 4
-        }
-    ]);
-    switch (answers.opening) {
-        case 'Exit': return db.end();
-        case 'View all departments': return view(allDepartments);
-        case 'View all roles': return view(allRoles); 
-        case 'View all employees': return view(allEmployees);
-        case 'Add a department': return addDepPrompt();
-    }
-}
-
-const addDepPrompt = async () => {
-    const answers = await inquirer.prompt(
-        {
-            type: 'input',
-            name: 'depName',
-            message: 'Please enter a name for the department you would like to add.',
-            validate: depName => {
-                if (depName) return true;
-                return false;
-            }
-        }
-    )
-    const sql = `INSERT INTO departments (name)
-                    VALUES ("${answers.depName}")`;
-    const message = `\n ${answers.depName} has been added to departments. \n`;
-    execute(sql, message);
-}
-
-// ------------- QUERIES ----------------------------
-const allDepartments = `SELECT * FROM departments`;
-
-const allRoles = `SELECT roles.id, roles.title, departments.name AS department, roles.salary
-                    FROM roles
-                    JOIN departments ON departments.id = roles.department_id`
-
-const allEmployees = `SELECT emp.id, emp.first_name, emp.last_name,
-                        roles.title AS role, departments.name AS department, roles.salary AS salary,
-                        CONCAT (manager.first_name, ' ', manager.last_name) AS manager
-                        FROM employees AS emp
-                        JOIN roles ON emp.role_id = roles.id
-                        JOIN departments ON departments.id = roles.department_id
-                        LEFT JOIN employees AS manager ON manager.id = emp.manager_id`;
+const inquirer = require("inquirer");
+const { allDepartments, allEmployees, allRoles } = require("./queries");
 
 // -------------- UTIL ----------------------------
 const view = (query) => {
-    db.promise()
-        .query(query)
-        .then(([rows, fields]) => {
-            console.log(`\n`);
-            console.table(rows);
-            console.log(`\n`);
-            mainPrompt();
-        })
-        .catch(err => console.log(err));
-}
+  db.promise()
+    .query(query)
+    .then(([rows, fields]) => {
+      console.log(`\n`);
+      console.table(rows);
+      console.log(`\n`);
+      mainPrompt();
+    })
+    .catch((err) => console.log(err));
+};
 
 const execute = (sql, message) => {
-    db.promise()
-        .execute(sql)
-        .then(() => {
-            console.log(message);
-            mainPrompt();
-        })
-        .catch(err => console.log(err));
-}
+  db.promise()
+    .execute(sql)
+    .then(() => {
+      console.log(message);
+      mainPrompt();
+    })
+    .catch((err) => console.log(err));
+};
+
+// -------------PROMPTS---------------------------
+const mainPrompt = async () => {
+  const answers = await inquirer.prompt([
+    {
+      type: "list",
+      name: "opening",
+      message: "What would you like to do?",
+      choices: [
+        "Exit",
+        "View all departments",
+        "View all roles",
+        "View all employees",
+        "Add a department",
+        "Add a role",
+        "Add an employee",
+        "Update an employee",
+      ],
+      pageSize: 4,
+    },
+  ]);
+  switch (answers.opening) {
+    case "Exit":
+      console.log("Goodbye!");
+      return db.end();
+    case "View all departments":
+      return view(allDepartments);
+    case "View all roles":
+      return view(allRoles);
+    case "View all employees":
+      return view(allEmployees);
+    case "Add a department":
+      return addDepPrompt();
+    case "Add a role":
+      return addRolePrompt();
+  }
+};
+
+const addDepPrompt = async () => {
+  const answers = await inquirer.prompt({
+    type: "input",
+    name: "name",
+    message: "Please enter a name for the department you would like to add.",
+    validate: (name) => {
+      if (name) return true;
+      return false;
+    },
+  });
+  const sql = `INSERT INTO departments (name)
+                    VALUES ("${answers.name}")`;
+  const message = `\n ${answers.name} has been added to departments. \n`;
+  execute(sql, message);
+};
+
+const addRolePrompt = async () => {
+  const departments = await db
+    .promise()
+    .query(allDepartments)
+    .then(([rows]) => rows);
+  const answers = await inquirer.prompt([
+    {
+      type: "input",
+      name: "title",
+      message: "Please enter a title for the role you would like to add.",
+      validate: (title) => {
+        if (title) return true;
+        return false;
+      },
+    },
+    {
+      type: "integer",
+      name: "salary",
+      message: "What is the salary for this position? (whole dollars only)",
+      validate: (salary) => {
+        if (salary <= 1000000000000000) return true;
+      },
+    },
+    {
+      type: "list",
+      name: "department",
+      message: "What department does this employee belong to?",
+      choices: departments.map((item) => `${item.id} ${item.name}`),
+    },
+  ]);
+  const sql = `INSERT INTO roles (title, salary, department_id)
+                      VALUES ("${answers.title}", "${
+    answers.salary
+  }", "${parseInt(answers.department)}")`;
+  const message = `\n ${
+    answers.title
+  } has been added as a role in the ${answers.department.match(
+    /\b[^\d\s]+/
+  )} department. \n`;
+  execute(sql, message);
+};
 
 mainPrompt();
+
+module.exports = mainPrompt;
