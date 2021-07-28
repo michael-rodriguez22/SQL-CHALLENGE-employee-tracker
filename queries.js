@@ -22,4 +22,4 @@ const allManagers = `SELECT emp.id, emp.first_name, emp.last_name,
                         LEFT JOIN employees AS manager ON manager.id = emp.manager_id
                         WHERE emp.is_manager = 1`;
 
-module.exports = { allDepartments, allEmployees, allRoles };
+module.exports = { allDepartments, allEmployees, allRoles, allManagers };
