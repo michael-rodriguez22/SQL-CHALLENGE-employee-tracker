@@ -4,7 +4,6 @@ const {
   allDepartments,
   allEmployees,
   allRoles,
-  allManagers,
 } = require("./queries");
 
 // -------------- UTIL ----------------------------
@@ -106,15 +105,15 @@ const addRolePrompt = async () => {
     {
       type: "integer",
       name: "salary",
-      message: "What is the salary for this position? (whole dollars only)",
+      message: "What is the salary for this role? (whole dollars only)",
       validate: (salary) => {
-        if (salary <= 1000000000000000) return true;
+        if (salary <= 10000000000000) return true;
       },
     },
     {
       type: "list",
       name: "department",
-      message: "What department does this employee belong to?",
+      message: "What department does this role belong to?",
       choices: departments.map(
         (department) => `${department.id} ${department.name}`
       ),
@@ -138,9 +137,9 @@ const addEmployeePrompt = async () => {
     .query(allRoles)
     .then(([rows]) => rows);
 
-  const managers = await db
+  const employees = await db
     .promise()
-    .query(allManagers)
+    .query(allEmployees)
     .then(([rows]) => {
       return rows;
     });
@@ -165,12 +164,6 @@ const addEmployeePrompt = async () => {
     },
     {
       type: "confirm",
-      name: "is_manager",
-      message: "Is this an employee a manager?",
-      default: false,
-    },
-    {
-      type: "confirm",
       name: "has_manager",
       message: "Does this employee have a manager?",
       default: false,
@@ -179,8 +172,8 @@ const addEmployeePrompt = async () => {
       type: "list",
       name: "manager",
       message: "Who is this employee's manager?",
-      choices: managers.map(
-        (manager) => `${manager.id} ${manager.first_name} ${manager.last_name}`
+      choices: employees.map(
+        (employee) => `${employee.id} ${employee.first_name} ${employee.last_name}`
       ),
       when: (answers) => answers.has_manager !== false,
     },
@@ -191,15 +184,13 @@ const addEmployeePrompt = async () => {
       choices: roles.map((role) => `${role.id} ${role.title}`),
     },
   ]);
-  if (answers.is_manager === true) answers.is_manager = 1;
-  else answers.is_manager = 0;
-  const sql = `INSERT INTO employees (first_name, last_name, manager_id, role_id, is_manager)
+  const sql = `INSERT INTO employees (first_name, last_name, manager_id, role_id)
                       VALUES ("${answers.first_name}", "${
     answers.last_name
   }", ${
     answers.manager ? answers.manager.match(/\b[^a-zA-Z\s]+/) : null
-  }, ${answers.role_id.match(/\b[^a-zA-Z\s]+/)}, ${answers.is_manager})`;
-  const message = `\n ${answers.first_name} ${answers.last_name} has been added to employees. \n`;
+  }, ${answers.role_id.match(/\b[^a-zA-Z\s]+/)})`;
+  const message = `\n ${answers.first_name} ${answers.last_name} has been added as an employee. \n`;
   execute(sql, message);
 };
 
