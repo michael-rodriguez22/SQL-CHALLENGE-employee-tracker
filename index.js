@@ -40,7 +40,7 @@ const mainPrompt = async () => {
     "Add a department",
     "Add a role",
     "Add an employee",
-    "Update an employee",
+    "Update an employee's role",
   ];
   const answers = await inquirer.prompt([
     {
@@ -68,7 +68,7 @@ const mainPrompt = async () => {
     case choices[6]:
       return addEmployeePrompt();
     case choices[7]:
-    //
+      return updateEmployeePrompt();
   }
 };
 
@@ -115,7 +115,9 @@ const addRolePrompt = async () => {
       type: "list",
       name: "department",
       message: "What department does this employee belong to?",
-      choices: departments.map(department => `${department.id} ${department.name}`),
+      choices: departments.map(
+        (department) => `${department.id} ${department.name}`
+      ),
     },
   ]);
   const sql = `INSERT INTO roles (title, salary, department_id)
@@ -140,7 +142,6 @@ const addEmployeePrompt = async () => {
     .promise()
     .query(allManagers)
     .then(([rows]) => {
-      console.log(rows);
       return rows;
     });
   const answers = await inquirer.prompt([
@@ -178,21 +179,62 @@ const addEmployeePrompt = async () => {
       type: "list",
       name: "manager",
       message: "Who is this employee's manager?",
-      choices: managers.map(manager => `${manager.id} ${manager.first_name} ${manager.last_name}`),
+      choices: managers.map(
+        (manager) => `${manager.id} ${manager.first_name} ${manager.last_name}`
+      ),
       when: (answers) => answers.has_manager !== false,
     },
     {
       type: "list",
       name: "role_id",
       message: "What is this employee's role?",
-      choices: roles.map(role => `${role.id} ${role.title}`),
+      choices: roles.map((role) => `${role.id} ${role.title}`),
     },
   ]);
   if (answers.is_manager === true) answers.is_manager = 1;
-  else answers.is_manager = 0; 
+  else answers.is_manager = 0;
   const sql = `INSERT INTO employees (first_name, last_name, manager_id, role_id, is_manager)
-                      VALUES ("${answers.first_name}", "${answers.last_name}", ${answers.manager ? answers.manager.match(/\b[^a-zA-Z\s]+/): null}, ${answers.role_id.match(/\b[^a-zA-Z\s]+/)}, ${answers.is_manager})`;
+                      VALUES ("${answers.first_name}", "${
+    answers.last_name
+  }", ${
+    answers.manager ? answers.manager.match(/\b[^a-zA-Z\s]+/) : null
+  }, ${answers.role_id.match(/\b[^a-zA-Z\s]+/)}, ${answers.is_manager})`;
   const message = `\n ${answers.first_name} ${answers.last_name} has been added to employees. \n`;
+  execute(sql, message);
+};
+
+const updateEmployeePrompt = async () => {
+  const employees = await db
+    .promise()
+    .query(allEmployees)
+    .then(([rows]) => rows);
+
+  const roles = await db
+    .promise()
+    .query(allRoles)
+    .then(([rows]) => rows);
+
+  const answers = await inquirer.prompt([
+    {
+      type: "list",
+      name: "employee",
+      message: "Which employee's role would you like to update?",
+      choices: employees.map(
+        (employee) =>
+          `${employee.id} ${employee.first_name} ${employee.last_name}`
+      ),
+    },
+    {
+      type: "list",
+      name: "new_role",
+      message: "Please select this employee's new role.",
+      choices: roles.map((role) => `${role.id} ${role.title}`),
+    },
+  ]);
+  const sql = `UPDATE employees SET role_id = ${answers.new_role.match(/[0-9]+/)} WHERE id = ${answers.employee.match(/[0-9]+/)}`;
+  const message = `\n ${answers.employee.match(
+    /\b\S[a-zA-Z\ ]+/
+  )} has had their role changed to ${answers.new_role.match(/\b\S[a-zA-Z\ ]+/)}. \n`;
   execute(sql, message);
 };
 
