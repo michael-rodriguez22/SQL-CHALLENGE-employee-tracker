@@ -1,12 +1,7 @@
 const db = require("./config/connection")
 const inquirer = require("inquirer")
-const {
-  allDepartments,
-  allEmployees,
-  allRoles,
-  allManagers,
-} = require("./queries")
 const { prompts, queries, regex } = require("./lib")
+
 // -------------- UTIL ----------------------------
 const view = query => {
   db.promise()
@@ -38,11 +33,11 @@ const mainPrompt = async ({ question, choices }) => {
       console.log("Goodbye!")
       return db.end()
     case choices[1]:
-      return view(allDepartments)
+      return view(queries.allDepartments)
     case choices[2]:
-      return view(allRoles)
+      return view(queries.allRoles)
     case choices[3]:
-      return view(allEmployees)
+      return view(queries.allEmployees)
     case choices[4]:
       return addDepPrompt()
     case choices[5]:
@@ -65,7 +60,7 @@ const addDepPrompt = async () => {
 const addRolePrompt = async () => {
   const departments = await db
     .promise()
-    .query(allDepartments)
+    .query(queries.allDepartments)
     .then(([rows]) => rows)
 
   const answers = await inquirer.prompt(prompts.add.role(departments))
@@ -84,12 +79,12 @@ const addRolePrompt = async () => {
 const addEmployeePrompt = async () => {
   const roles = await db
     .promise()
-    .query(allRoles)
+    .query(queries.allRoles)
     .then(([rows]) => rows)
 
   const managers = await db
     .promise()
-    .query(allManagers)
+    .query(queries.allManagers)
     .then(([rows]) => {
       return rows
     })
@@ -107,12 +102,12 @@ const addEmployeePrompt = async () => {
 const updateEmployeePrompt = async () => {
   const employees = await db
     .promise()
-    .query(allEmployees)
+    .query(queries.allEmployees)
     .then(([rows]) => rows)
 
   const roles = await db
     .promise()
-    .query(allRoles)
+    .query(queries.allRoles)
     .then(([rows]) => rows)
 
   const answers = await inquirer.prompt([
