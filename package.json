@@ -4,7 +4,8 @@
   "description": "Content Management System accessed through the command line",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "node index"
   },
   "repository": {
     "type": "git",

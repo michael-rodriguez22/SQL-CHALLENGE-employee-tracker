@@ -1,114 +1,116 @@
-const db = require("./config/connection");
-const inquirer = require("inquirer");
+const db = require("./config/connection")
+const inquirer = require("inquirer")
 const {
   allDepartments,
   allEmployees,
   allRoles,
   allManagers,
-} = require("./queries");
+} = require("./queries")
+const prompts = require("./lib/prompts")
 
 // -------------- UTIL ----------------------------
-const view = (query) => {
+const view = query => {
   db.promise()
     .query(query)
     .then(([rows, fields]) => {
-      console.log(`\n`);
-      console.table(rows);
-      console.log(`\n`);
-      mainPrompt();
+      console.log(`\n`)
+      console.table(rows)
+      console.log(`\n`)
+      mainPrompt()
     })
-    .catch((err) => console.log(err));
-};
+    .catch(err => console.log(err))
+}
 
 const execute = (sql, message) => {
   db.promise()
     .execute(sql)
     .then(() => {
-      console.log(message);
-      mainPrompt();
+      console.log(message)
+      mainPrompt()
     })
-    .catch((err) => console.log(err));
-};
+    .catch(err => console.log(err))
+}
 
 // -------------PROMPTS---------------------------
-const mainPrompt = async () => {
-  const choices = [
-    "Exit",
-    "View all departments",
-    "View all roles",
-    "View all employees",
-    "Add a department",
-    "Add a role",
-    "Add an employee",
-    "Update an employee's role",
-  ];
-  const answers = await inquirer.prompt([
-    {
-      type: "list",
-      name: "opening",
-      message: "What would you like to do?",
-      choices: choices,
-      pageSize: 4,
-    },
-  ]);
+const mainPrompt = async ({ question, choices }) => {
+  // const choices = [
+  //   "Exit",
+  //   "View all departments",
+  //   "View all roles",
+  //   "View all employees",
+  //   "Add a department",
+  //   "Add a role",
+  //   "Add an employee",
+  //   "Update an employee's role",
+  // ]
+  // const answers = await inquirer.prompt([
+  //   {
+  //     type: "list",
+  //     name: "opening",
+  //     message: "What would you like to do?",
+  //     choices: choices,
+  //     pageSize: 4,
+  //   },
+  // ])
+  const answers = await inquirer.prompt(question)
   switch (answers.opening) {
     case choices[0]:
-      console.log("Goodbye!");
-      return db.end();
+      console.log("Goodbye!")
+      return db.end()
     case choices[1]:
-      return view(allDepartments);
+      return view(allDepartments)
     case choices[2]:
-      return view(allRoles);
+      return view(allRoles)
     case choices[3]:
-      return view(allEmployees);
+      return view(allEmployees)
     case choices[4]:
-      return addDepPrompt();
+      return addDepPrompt()
     case choices[5]:
-      return addRolePrompt();
+      return addRolePrompt()
     case choices[6]:
-      return addEmployeePrompt();
+      return addEmployeePrompt()
     case choices[7]:
-      return updateEmployeePrompt();
+      return updateEmployeePrompt()
   }
-};
+}
 
 const addDepPrompt = async () => {
   const answers = await inquirer.prompt({
     type: "input",
     name: "name",
     message: "Please enter a name for the department you would like to add.",
-    validate: (name) => {
-      if (name.match(/^[a-zA-Z\ ]+$/)) return true;
-      return false;
+    validate: name => {
+      if (name.match(/^[a-zA-Z\ ]+$/)) return true
+      return false
     },
-  });
+  })
   const sql = `INSERT INTO departments (name)
-                    VALUES ("${answers.name}")`;
-  const message = `\n ${answers.name} has been added to departments. \n`;
-  execute(sql, message);
-};
+                    VALUES ("${answers.name}")`
+  const message = `\n ${answers.name} has been added to departments. \n`
+  execute(sql, message)
+}
 
 const addRolePrompt = async () => {
   const departments = await db
     .promise()
     .query(allDepartments)
-    .then(([rows]) => rows);
+    .then(([rows]) => rows)
   const answers = await inquirer.prompt([
     {
       type: "input",
       name: "title",
       message: "Please enter a title for the role you would like to add.",
-      validate: (title) => {
-        if (title.match(/^[a-zA-Z\ ]+$/)) return true;
-        return false;
+      validate: title => {
+        if (title.match(/^[a-zA-Z\ ]+$/)) return true
+        return false
       },
     },
     {
       type: "integer",
       name: "salary",
       message: "What is the salary for this position? (whole dollars only)",
-      validate: (salary) => {
-        if (salary <= 1000000000000000) return true;
+      validate: salary => {
+        if (salary <= 1000000000000000) return true
       },
     },
     {
@@ -116,51 +118,51 @@ const addRolePrompt = async () => {
       name: "department",
       message: "What department does this employee belong to?",
       choices: departments.map(
-        (department) => `${department.id} ${department.name}`
+        department => `${department.id} ${department.name}`
       ),
     },
-  ]);
+  ])
   const sql = `INSERT INTO roles (title, salary, department_id)
                       VALUES ("${answers.title}", "${
     answers.salary
-  }", "${parseInt(answers.department)}")`;
+  }", "${parseInt(answers.department)}")`
   const message = `\n ${
     answers.title
   } has been added as a role in the ${answers.department.match(
     /\b[^\d\s]+/
-  )} department. \n`;
-  execute(sql, message);
-};
+  )} department. \n`
+  execute(sql, message)
+}
 
 const addEmployeePrompt = async () => {
   const roles = await db
     .promise()
     .query(allRoles)
-    .then(([rows]) => rows);
+    .then(([rows]) => rows)
 
   const managers = await db
     .promise()
     .query(allManagers)
     .then(([rows]) => {
-      return rows;
-    });
+      return rows
+    })
   const answers = await inquirer.prompt([
     {
       type: "input",
       name: "first_name",
       message: "What is this employee's first name?",
-      validate: (first_name) => {
-        if (first_name.match(/^[a-zA-Z]+$/)) return true;
-        return false;
+      validate: first_name => {
+        if (first_name.match(/^[a-zA-Z]+$/)) return true
+        return false
       },
     },
     {
       type: "input",
       name: "last_name",
       message: "What is this employee's last name?",
-      validate: (last_name) => {
-        if (last_name.match(/^[a-zA-Z]+$/)) return true;
-        return false;
+      validate: last_name => {
+        if (last_name.match(/^[a-zA-Z]+$/)) return true
+        return false
       },
     },
     {
@@ -180,39 +182,39 @@ const addEmployeePrompt = async () => {
       name: "manager",
       message: "Who is this employee's manager?",
       choices: managers.map(
-        (manager) => `${manager.id} ${manager.first_name} ${manager.last_name}`
+        manager => `${manager.id} ${manager.first_name} ${manager.last_name}`
       ),
-      when: (answers) => answers.has_manager !== false,
+      when: answers => answers.has_manager !== false,
     },
     {
       type: "list",
       name: "role_id",
       message: "What is this employee's role?",
-      choices: roles.map((role) => `${role.id} ${role.title}`),
+      choices: roles.map(role => `${role.id} ${role.title}`),
     },
-  ]);
-  if (answers.is_manager === true) answers.is_manager = 1;
-  else answers.is_manager = 0;
+  ])
+  if (answers.is_manager === true) answers.is_manager = 1
+  else answers.is_manager = 0
   const sql = `INSERT INTO employees (first_name, last_name, manager_id, role_id, is_manager)
                       VALUES ("${answers.first_name}", "${
     answers.last_name
   }", ${
     answers.manager ? answers.manager.match(/\b[^a-zA-Z\s]+/) : null
-  }, ${answers.role_id.match(/\b[^a-zA-Z\s]+/)}, ${answers.is_manager})`;
-  const message = `\n ${answers.first_name} ${answers.last_name} has been added to employees. \n`;
-  execute(sql, message);
-};
+  }, ${answers.role_id.match(/\b[^a-zA-Z\s]+/)}, ${answers.is_manager})`
+  const message = `\n ${answers.first_name} ${answers.last_name} has been added to employees. \n`
+  execute(sql, message)
+}
 
 const updateEmployeePrompt = async () => {
   const employees = await db
     .promise()
     .query(allEmployees)
-    .then(([rows]) => rows);
+    .then(([rows]) => rows)
 
   const roles = await db
     .promise()
     .query(allRoles)
-    .then(([rows]) => rows);
+    .then(([rows]) => rows)
 
   const answers = await inquirer.prompt([
     {
@@ -220,7 +222,7 @@ const updateEmployeePrompt = async () => {
       name: "employee",
       message: "Which employee's role would you like to update?",
       choices: employees.map(
-        (employee) =>
+        employee =>
           `${employee.id} ${employee.first_name} ${employee.last_name}`
       ),
     },
@@ -228,16 +230,20 @@ const updateEmployeePrompt = async () => {
       type: "list",
       name: "new_role",
       message: "Please select this employee's new role.",
-      choices: roles.map((role) => `${role.id} ${role.title}`),
+      choices: roles.map(role => `${role.id} ${role.title}`),
     },
-  ]);
-  const sql = `UPDATE employees SET role_id = ${answers.new_role.match(/[0-9]+/)} WHERE id = ${answers.employee.match(/[0-9]+/)}`;
+  ])
+  const sql = `UPDATE employees SET role_id = ${answers.new_role.match(
+    /[0-9]+/
+  )} WHERE id = ${answers.employee.match(/[0-9]+/)}`
   const message = `\n ${answers.employee.match(
     /\b\S[a-zA-Z\ ]+/
-  )} has had their role changed to ${answers.new_role.match(/\b\S[a-zA-Z\ ]+/)}. \n`;
-  execute(sql, message);
-};
+  )} has had their role changed to ${answers.new_role.match(
+    /\b\S[a-zA-Z\ ]+/
+  )}. \n`
+  execute(sql, message)
+}
 
-mainPrompt();
+mainPrompt(prompts.opening)
 
-module.exports = mainPrompt;
+module.exports = mainPrompt
