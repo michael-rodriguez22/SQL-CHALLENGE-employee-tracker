@@ -1,56 +1,7 @@
 const db = require("./config/connection")
+const cTable = require("console.table")
 const inquirer = require("inquirer")
 const { prompts, queries, regex } = require("./lib")
-
-const addDepartment = async () => {
-  const answers = await inquirer.prompt(prompts.add.department)
-  const sql = `INSERT INTO departments (name)
-                    VALUES ("${answers.name}")`
-  const message = `\n ${answers.name} has been added to departments. \n`
-  execute(sql, message)
-}
-
-const addRole = async () => {
-  const departments = await db
-    .promise()
-    .query(queries.allDepartments)
-    .then(([rows]) => rows)
-
-  const answers = await inquirer.prompt(prompts.add.role(departments))
-  const sql = `INSERT INTO roles (title, salary, department_id)
-                      VALUES ("${answers.title}", "${
-    answers.salary
-  }", "${parseInt(answers.department)}")`
-  const message = `\n ${
-    answers.title
-  } has been added as a role in the ${answers.department.match(
-    regex.textOnly
-  )} department. \n`
-  execute(sql, message)
-}
-
-const addEmployee = async () => {
-  const roles = await db
-    .promise()
-    .query(queries.allRoles)
-    .then(([rows]) => rows)
-
-  const managers = await db
-    .promise()
-    .query(queries.allManagers)
-    .then(([rows]) => {
-      return rows
-    })
-
-  const answers = await inquirer.prompt(prompts.add.employee(roles, managers))
-  answers.isManager = answers.isManager ? 1 : 0
-  const sql = `INSERT INTO employees (first_name, last_name, manager_id, role_id, is_manager)
-                      VALUES ("${answers.firstName}", "${answers.lastName}", ${
-    answers.manager ? answers.manager.match(regex.idOnly) : null
-  }, ${answers.roleId.match(regex.idOnly)}, ${answers.isManager})`
-  const message = `\n ${answers.firstName} ${answers.lastName} has been added to employees. \n`
-  execute(sql, message)
-}
 
 const updateEmployeePrompt = async () => {
   const employees = await db
@@ -127,13 +78,13 @@ const initializeApp = async () => {
       return handle.view.employees()
 
     case openingChoices[4]:
-      return addDepartment()
+      return handle.add.department()
 
     case openingChoices[5]:
-      return addRole()
+      return handle.add.role()
 
     case openingChoices[6]:
-      return addEmployee()
+      return handle.add.employee()
 
     case openingChoices[7]:
       return updateEmployeePrompt()
@@ -146,9 +97,7 @@ const view = query => {
   db.promise()
     .query(query)
     .then(([rows, fields]) => {
-      console.log(`\n`)
-      console.table(rows)
-      console.log(`\n`)
+      console.log(`\n ${cTable.getTable(rows)} \n`)
       initializeApp()
     })
     .catch(err => console.log(err))
@@ -169,20 +118,52 @@ const handle = {
     departments: () => view(queries.view.departments),
     roles: async () => {
       const answers = await inquirer.prompt(prompts.view.roles)
-      view(queries.view.roles(answers.sort))
+      view(queries.view.roles(answers))
     },
     employees: async () => {
       const answers = await inquirer.prompt(prompts.view.employees)
-      view(queries.view.employees(answers.sort))
+      view(queries.view.employees(answers))
     },
   },
 
   add: {
     department: async () => {
       const answers = await inquirer.prompt(prompts.add.department)
-      const sql = `INSERT INTO departments (name)
-                        VALUES ("${answers.name}")`
+      const sql = queries.add.department(answers)
       const message = `\n ${answers.name} has been added to departments. \n`
+      execute(sql, message)
+    },
+    role: async () => {
+      const departments = await db
+        .promise()
+        .query(queries.view.departments)
+        .then(([rows]) => rows)
+      const answers = await inquirer.prompt(prompts.add.role(departments))
+      const sql = queries.add.role(answers)
+      const message = `\n ${
+        answers.title
+      } has been added as a role in the ${answers.department.match(
+        regex.textOnly
+      )} department. \n`
+      execute(sql, message)
+    },
+    employee: async () => {
+      const roles = await db
+        .promise()
+        .query(queries.view.roles({ sort: "" }))
+        .then(([rows]) => rows)
+
+      const managers = await db
+        .promise()
+        .query(queries.view.employees({ sort: "WHERE e.is_manager = 1" }))
+        .then(([rows]) => rows)
+
+      const answers = await inquirer.prompt(
+        prompts.add.employee(roles, managers)
+      )
+      answers.isManager = answers.isManager ? 1 : 0
+      const sql = queries.add.employee(answers)
+      const message = `\n ${answers.firstName} ${answers.lastName} has been added to employees. \n`
       execute(sql, message)
     },
   },
