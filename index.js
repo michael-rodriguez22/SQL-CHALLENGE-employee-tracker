@@ -51,10 +51,11 @@ const initializeApp = async () => {
     "Add a department",
     "Add a role",
     "Add an employee",
+    "Update a role",
     "Update an employee",
-    "Delete department",
-    "Delete role",
-    "Delete employee",
+    "Delete a department",
+    "Delete a role",
+    "Delete an employee",
   ]
   const answers = await inquirer.prompt({
     type: "list",
@@ -87,7 +88,19 @@ const initializeApp = async () => {
       return handle.add.employee()
 
     case openingChoices[7]:
-      return updateEmployeePrompt()
+      return handle.update.role()
+
+    case openingChoices[8]:
+      return handle.update.employee()
+
+    case openingChoices[9]:
+      return handle.delete.department()
+
+    case openingChoices[10]:
+      return handle.delete.role()
+
+    case openingChoices[11]:
+      return handle.delete.employee()
   }
 }
 
@@ -107,7 +120,7 @@ const execute = (sql, message) => {
   db.promise()
     .execute(sql)
     .then(() => {
-      console.log(message)
+      console.log(`\n ${message} \n`)
       initializeApp()
     })
     .catch(err => console.log(err))
@@ -115,7 +128,7 @@ const execute = (sql, message) => {
 
 const handle = {
   view: {
-    departments: () => view(queries.view.departments),
+    departments: async () => view(queries.view.departments),
     roles: async () => {
       const answers = await inquirer.prompt(prompts.view.roles)
       view(queries.view.roles(answers))
@@ -130,7 +143,7 @@ const handle = {
     department: async () => {
       const answers = await inquirer.prompt(prompts.add.department)
       const sql = queries.add.department(answers)
-      const message = `\n ${answers.name} has been added to departments. \n`
+      const message = `${answers.name} has been added to departments.`
       execute(sql, message)
     },
     role: async () => {
@@ -140,11 +153,11 @@ const handle = {
         .then(([rows]) => rows)
       const answers = await inquirer.prompt(prompts.add.role(departments))
       const sql = queries.add.role(answers)
-      const message = `\n ${
+      const message = `${
         answers.title
       } has been added as a role in the ${answers.department.match(
         regex.textOnly
-      )} department. \n`
+      )} department.`
       execute(sql, message)
     },
     employee: async () => {
@@ -163,7 +176,57 @@ const handle = {
       )
       answers.isManager = answers.isManager ? 1 : 0
       const sql = queries.add.employee(answers)
-      const message = `\n ${answers.firstName} ${answers.lastName} has been added to employees. \n`
+      const message = `${answers.firstName} ${answers.lastName} has been added to employees.`
+      execute(sql, message)
+    },
+  },
+
+  update: {
+    role: {},
+    employee: {},
+  },
+
+  delete: {
+    department: async () => {
+      const departments = await db
+        .promise()
+        .query(queries.view.departments)
+        .then(([rows]) => rows)
+      const answers = await inquirer.prompt(
+        prompts.delete.department(departments)
+      )
+      const sql = queries.delete.department({
+        id: answers.department.match(regex.idOnly),
+      })
+      const message = `The ${answers.department.match(
+        regex.textOnly
+      )} department has been successfully deleted.`
+      execute(sql, message)
+    },
+    role: async () => {
+      const roles = await db
+        .promise()
+        .query(queries.view.roles({ sort: "" }))
+        .then(([rows]) => rows)
+      const answers = await inquirer.prompt(prompts.delete.role(roles))
+      const sql = queries.delete.role({ id: answers.role.match(regex.idOnly) })
+      const message = `The ${answers.role.match(
+        regex.textOnly
+      )} role has been successfully deleted.`
+      execute(sql, message)
+    },
+    employee: async () => {
+      const employees = await db
+        .promise()
+        .query(queries.view.employees({ sort: "" }))
+        .then(([rows]) => rows)
+      const answers = await inquirer.prompt(prompts.delete.employee(employees))
+      const sql = queries.delete.employee({
+        id: answers.employee.match(regex.idOnly),
+      })
+      const message = `The employee ${answers.employee.match(
+        regex.textOnly
+      )} has been successfully deleted.`
       execute(sql, message)
     },
   },
