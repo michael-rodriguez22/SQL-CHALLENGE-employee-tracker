@@ -2,54 +2,7 @@ const db = require("./config/connection")
 const inquirer = require("inquirer")
 const { prompts, queries, regex } = require("./lib")
 
-// -------------- UTIL ----------------------------
-const view = query => {
-  db.promise()
-    .query(query)
-    .then(([rows, fields]) => {
-      console.log(`\n`)
-      console.table(rows)
-      console.log(`\n`)
-      mainPrompt(prompts.opening)
-    })
-    .catch(err => console.log(err))
-}
-
-const execute = (sql, message) => {
-  db.promise()
-    .execute(sql)
-    .then(() => {
-      console.log(message)
-      mainPrompt(prompts.opening)
-    })
-    .catch(err => console.log(err))
-}
-
-// -------------PROMPTS---------------------------
-const mainPrompt = async ({ question, choices }) => {
-  const answers = await inquirer.prompt(question)
-  switch (answers.opening) {
-    case choices[0]:
-      console.log("Goodbye!")
-      return db.end()
-    case choices[1]:
-      return view(queries.allDepartments)
-    case choices[2]:
-      return view(queries.allRoles)
-    case choices[3]:
-      return view(queries.allEmployees)
-    case choices[4]:
-      return addDepPrompt()
-    case choices[5]:
-      return addRolePrompt()
-    case choices[6]:
-      return addEmployeePrompt()
-    case choices[7]:
-      return updateEmployeePrompt()
-  }
-}
-
-const addDepPrompt = async () => {
+const addDepartment = async () => {
   const answers = await inquirer.prompt(prompts.add.department)
   const sql = `INSERT INTO departments (name)
                     VALUES ("${answers.name}")`
@@ -57,7 +10,7 @@ const addDepPrompt = async () => {
   execute(sql, message)
 }
 
-const addRolePrompt = async () => {
+const addRole = async () => {
   const departments = await db
     .promise()
     .query(queries.allDepartments)
@@ -76,7 +29,7 @@ const addRolePrompt = async () => {
   execute(sql, message)
 }
 
-const addEmployeePrompt = async () => {
+const addEmployee = async () => {
   const roles = await db
     .promise()
     .query(queries.allRoles)
@@ -138,4 +91,99 @@ const updateEmployeePrompt = async () => {
   execute(sql, message)
 }
 
-mainPrompt(prompts.opening)
+const initializeApp = async () => {
+  const openingChoices = [
+    "Exit",
+    "View all departments",
+    "View all roles",
+    "View all employees",
+    "Add a department",
+    "Add a role",
+    "Add an employee",
+    "Update an employee",
+    "Delete department",
+    "Delete role",
+    "Delete employee",
+  ]
+  const answers = await inquirer.prompt({
+    type: "list",
+    name: "opening",
+    message: "What would you like to do?",
+    choices: openingChoices,
+    pageSize: 5,
+  })
+  switch (answers.opening) {
+    case openingChoices[0]:
+      console.log("Goodbye!")
+      return db.end()
+
+    case openingChoices[1]:
+      return handle.view.departments()
+
+    case openingChoices[2]:
+      return handle.view.roles()
+
+    case openingChoices[3]:
+      return handle.view.employees()
+
+    case openingChoices[4]:
+      return addDepartment()
+
+    case openingChoices[5]:
+      return addRole()
+
+    case openingChoices[6]:
+      return addEmployee()
+
+    case openingChoices[7]:
+      return updateEmployeePrompt()
+  }
+}
+
+initializeApp()
+
+const view = query => {
+  db.promise()
+    .query(query)
+    .then(([rows, fields]) => {
+      console.log(`\n`)
+      console.table(rows)
+      console.log(`\n`)
+      initializeApp()
+    })
+    .catch(err => console.log(err))
+}
+
+const execute = (sql, message) => {
+  db.promise()
+    .execute(sql)
+    .then(() => {
+      console.log(message)
+      initializeApp()
+    })
+    .catch(err => console.log(err))
+}
+
+const handle = {
+  view: {
+    departments: () => view(queries.view.departments),
+    roles: async () => {
+      const answers = await inquirer.prompt(prompts.view.roles)
+      view(queries.view.roles(answers.sort))
+    },
+    employees: async () => {
+      const answers = await inquirer.prompt(prompts.view.employees)
+      view(queries.view.employees(answers.sort))
+    },
+  },
+
+  add: {
+    department: async () => {
+      const answers = await inquirer.prompt(prompts.add.department)
+      const sql = `INSERT INTO departments (name)
+                        VALUES ("${answers.name}")`
+      const message = `\n ${answers.name} has been added to departments. \n`
+      execute(sql, message)
+    },
+  },
+}
