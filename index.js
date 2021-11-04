@@ -51,8 +51,8 @@ const initializeApp = async () => {
     "Add a department",
     "Add a role",
     "Add an employee",
-    "Update a role",
-    "Update an employee",
+    "Update a role's salary",
+    "Update an employee's information",
     "Delete a department",
     "Delete a role",
     "Delete an employee",
@@ -109,7 +109,7 @@ initializeApp()
 const view = query => {
   db.promise()
     .query(query)
-    .then(([rows, fields]) => {
+    .then(([rows]) => {
       console.log(`\n ${cTable.getTable(rows)} \n`)
       initializeApp()
     })
@@ -182,7 +182,20 @@ const handle = {
   },
 
   update: {
-    role: {},
+    role: async () => {
+      const roles = await db
+        .promise()
+        .query(queries.view.roles({ sort: "ORDER BY department ASC" }))
+        .then(([rows]) => rows)
+      // console.log(roles)
+      const answers = await inquirer.prompt(prompts.update.role(roles))
+      const sql = queries.update.role({
+        id: answers.role.match(regex.idOnly),
+        salary: answers.salary,
+      })
+      const message = `This role's salary has been successfully updated to ${answers.salary}.`
+      execute(sql, message)
+    },
     employee: {},
   },
 
