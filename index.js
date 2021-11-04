@@ -187,7 +187,6 @@ const handle = {
         .promise()
         .query(queries.view.roles({ sort: "ORDER BY department ASC" }))
         .then(([rows]) => rows)
-      // console.log(roles)
       const answers = await inquirer.prompt(prompts.update.role(roles))
       const sql = queries.update.role({
         id: answers.role.match(regex.idOnly),
@@ -196,7 +195,27 @@ const handle = {
       const message = `This role's salary has been successfully updated to ${answers.salary}.`
       execute(sql, message)
     },
-    employee: {},
+    employee: async () => {
+      const employees = await db
+        .promise()
+        .query(queries.view.employees({ sort: "" }))
+        .then(([rows]) => rows)
+      const managers = await db
+        .promise()
+        .query(queries.view.employees({ sort: "WHERE e.is_manager = 1" }))
+        .then(([rows]) => rows)
+      const roles = await db.promise().query(queries.view.roles({ sort: "" }))
+      const answers = await inquirer.prompt(
+        prompts.update.employee(employees, managers, roles)
+      )
+      answers.isManager = answers.isManager ? 1 : 0
+      const targetEmployee = employees.filter(
+        employee => employee.id === answers.id
+      )[0]
+      const sql = queries.update.employee(answers, targetEmployee)
+      const message = `Employee ${answers.id} has had their information successfully updated.`
+      execute(sql, message)
+    },
   },
 
   delete: {
