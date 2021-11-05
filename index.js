@@ -2,7 +2,8 @@ const db = require("./config/connection")
 const cTable = require("console.table")
 const inquirer = require("inquirer")
 const { prompts, queries } = require("./lib")
-const regex = require("./lib/regex")
+
+const textOnly = /[a-zA-Z]+[\s\w]+/
 
 const initializeApp = async () => {
   const openingChoices = [
@@ -118,7 +119,7 @@ const handle = {
       const message = `${
         answers.title
       } has been added as a role in the ${answers.department.match(
-        regex.textOnly
+        textOnly
       )} department.`
       execute(sql, message)
     },
@@ -150,10 +151,7 @@ const handle = {
         .query(queries.view.roles({ sort: "ORDER BY department ASC" }))
         .then(([rows]) => rows)
       const answers = await inquirer.prompt(prompts.update().role(roles))
-      const sql = queries.update.role({
-        id: answers.role.match(regex.idOnly),
-        salary: answers.salary,
-      })
+      const sql = queries.update.role(answers)
       const message = `This role's salary has been successfully updated to ${answers.salary}.`
       execute(sql, message)
     },
@@ -192,11 +190,9 @@ const handle = {
       const answers = await inquirer.prompt(
         prompts.delete.department(departments)
       )
-      const sql = queries.delete.department({
-        id: answers.department.match(regex.idOnly),
-      })
+      const sql = queries.delete.department(answers)
       const message = `The ${answers.department.match(
-        regex.textOnly
+        textOnly
       )} department has been successfully deleted.`
       execute(sql, message)
     },
@@ -206,9 +202,9 @@ const handle = {
         .query(queries.view.roles({ sort: "" }))
         .then(([rows]) => rows)
       const answers = await inquirer.prompt(prompts.delete.role(roles))
-      const sql = queries.delete.role({ id: answers.role.match(regex.idOnly) })
+      const sql = queries.delete.role(answers)
       const message = `The ${answers.role.match(
-        regex.textOnly
+        textOnly
       )} role has been successfully deleted.`
       execute(sql, message)
     },
@@ -218,11 +214,9 @@ const handle = {
         .query(queries.view.employees({ sort: "" }))
         .then(([rows]) => rows)
       const answers = await inquirer.prompt(prompts.delete.employee(employees))
-      const sql = queries.delete.employee({
-        id: answers.employee.match(regex.idOnly),
-      })
+      const sql = queries.delete.employee(answers)
       const message = `The employee ${answers.employee.match(
-        regex.textOnly
+        textOnly
       )} has been successfully deleted.`
       execute(sql, message)
     },
