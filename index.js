@@ -1,8 +1,8 @@
 const db = require("./config/connection")
 const cTable = require("console.table")
 const inquirer = require("inquirer")
-const { /* prompts, */ queries, regex } = require("./lib")
-const prompts = require("./lib/prompts")
+const { prompts, queries } = require("./lib")
+const regex = require("./lib/regex")
 
 const initializeApp = async () => {
   const openingChoices = [
@@ -103,7 +103,7 @@ const handle = {
 
   add: {
     department: async () => {
-      const answers = await inquirer.prompt(prompts.add.department)
+      const answers = await inquirer.prompt(prompts.add().department)
       const sql = queries.add.department(answers)
       const message = `${answers.name} has been added to departments.`
       execute(sql, message)
@@ -113,7 +113,7 @@ const handle = {
         .promise()
         .query(queries.view.departments)
         .then(([rows]) => rows)
-      const answers = await inquirer.prompt(prompts.add.role(departments))
+      const answers = await inquirer.prompt(prompts.add().role(departments))
       const sql = queries.add.role(answers)
       const message = `${
         answers.title
@@ -134,7 +134,7 @@ const handle = {
         .then(([rows]) => rows)
 
       const answers = await inquirer.prompt(
-        prompts.add.employee(roles, managers)
+        prompts.add().employee(roles, managers)
       )
       answers.isManager = answers.isManager ? 1 : 0
       const sql = queries.add.employee(answers)
@@ -149,7 +149,7 @@ const handle = {
         .promise()
         .query(queries.view.roles({ sort: "ORDER BY department ASC" }))
         .then(([rows]) => rows)
-      const answers = await inquirer.prompt(prompts.update.role(roles))
+      const answers = await inquirer.prompt(prompts.update().role(roles))
       const sql = queries.update.role({
         id: answers.role.match(regex.idOnly),
         salary: answers.salary,
@@ -166,9 +166,12 @@ const handle = {
         .promise()
         .query(queries.view.employees({ sort: "WHERE e.is_manager = 1" }))
         .then(([rows]) => rows)
-      const roles = await db.promise().query(queries.view.roles({ sort: "" }))
+      const roles = await db
+        .promise()
+        .query(queries.view.roles({ sort: "" }))
+        .then(([rows]) => rows)
       const answers = await inquirer.prompt(
-        prompts.update.employee(employees, managers, roles)
+        prompts.update().employee(employees, managers, roles)
       )
       answers.isManager = answers.isManager ? 1 : 0
       const targetEmployee = employees.filter(
