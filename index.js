@@ -1,46 +1,8 @@
 const db = require("./config/connection")
 const cTable = require("console.table")
 const inquirer = require("inquirer")
-const { prompts, queries, regex } = require("./lib")
-
-const updateEmployeePrompt = async () => {
-  const employees = await db
-    .promise()
-    .query(queries.allEmployees)
-    .then(([rows]) => rows)
-
-  const roles = await db
-    .promise()
-    .query(queries.allRoles)
-    .then(([rows]) => rows)
-
-  const answers = await inquirer.prompt([
-    {
-      type: "list",
-      name: "employee",
-      message: "Which employee's role would you like to update?",
-      choices: employees.map(
-        employee =>
-          `${employee.id} ${employee.first_name} ${employee.last_name}`
-      ),
-    },
-    {
-      type: "list",
-      name: "new_role",
-      message: "Please select this employee's new role.",
-      choices: roles.map(role => `${role.id} ${role.title}`),
-    },
-  ])
-  const sql = `UPDATE employees SET role_id = ${answers.new_role.match(
-    regex.idOnly
-  )} WHERE id = ${answers.employee.match(regex.idOnly)}`
-  const message = `\n ${answers.employee.match(
-    regex.textOnly
-  )} has had their role changed to ${answers.new_role.match(
-    regex.textOnly
-  )}. \n`
-  execute(sql, message)
-}
+const { /* prompts, */ queries, regex } = require("./lib")
+const prompts = require("./lib/prompts")
 
 const initializeApp = async () => {
   const openingChoices = [
