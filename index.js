@@ -1,7 +1,7 @@
 const db = require("./config/connection")
-const cTable = require("console.table")
 const inquirer = require("inquirer")
 const { prompts, queries } = require("./lib")
+const testHandlers = require("./lib/handlers")
 
 const textOnly = /[a-zA-Z]+[\s\w]+/
 
@@ -33,13 +33,16 @@ const initializeApp = async () => {
       return db.end()
 
     case openingChoices[1]:
-      return handle.view.departments()
+      await testHandlers.view.departments()
+      break
 
     case openingChoices[2]:
-      return handle.view.roles()
+      await testHandlers.view.roles()
+      break
 
     case openingChoices[3]:
-      return handle.view.employees()
+      await testHandlers.view.employees()
+      break
 
     case openingChoices[4]:
       return handle.add.department()
@@ -65,6 +68,7 @@ const initializeApp = async () => {
     case openingChoices[11]:
       return handle.delete.employee()
   }
+  return initializeApp()
 }
 
 initializeApp()
