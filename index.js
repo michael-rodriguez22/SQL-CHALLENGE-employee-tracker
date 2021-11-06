@@ -45,13 +45,16 @@ const initializeApp = async () => {
       break
 
     case openingChoices[4]:
-      return handle.add.department()
+      await testHandlers.add.department()
+      break
 
     case openingChoices[5]:
-      return handle.add.role()
+      await testHandlers.add.role()
+      break
 
     case openingChoices[6]:
-      return handle.add.employee()
+      await testHandlers.add.employee()
+      break
 
     case openingChoices[7]:
       return handle.update.role()
