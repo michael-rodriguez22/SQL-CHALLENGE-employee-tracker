@@ -1,15 +1,15 @@
-const mysql = require('mysql2');
+const mysql = require("mysql2")
 
-require('dotenv').config();
+require("dotenv").config()
 
 const db = mysql.createConnection(
   {
-    host: 'localhost',
+    host: "localhost",
     user: process.env.DB_USER,
     password: process.env.DB_PW,
-    database: "butterfly_cms",
+    database: "nodejs_employee_tracker",
   },
-  console.log("connected to the butterfly_cms database")
-);
+  console.log("connected to the nodejs_employee_tracker database")
+)
 
-module.exports = db;
+module.exports = db

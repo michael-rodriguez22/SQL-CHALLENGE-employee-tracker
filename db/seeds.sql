@@ -21,7 +21,7 @@ VALUES
 ("Visual Tech", 2000, 3);
 
 
-INSERT INTO employees (first_name, last_name, role_id, manager_id)
+INSERT INTO employees (first_name, last_name, role_id, manager_id, is_manager)
 VALUES 
 ("Alex", "Afferson", 1, null, 1),
 ("Bailey", "Farias", 2, 1, 1),
